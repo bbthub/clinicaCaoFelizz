@@ -24,7 +24,7 @@ public class VeterinarioDAO {
             // Verificar se a pessoa existe
             try (PreparedStatement verificar = conn.prepareStatement(sqlVerificar)) {
 
-                verificar.setInt(1, veterinario.getCpf());
+                verificar.setString(1, veterinario.getCpf());
 
                 try (ResultSet rs = verificar.executeQuery()) {
 
@@ -40,7 +40,7 @@ public class VeterinarioDAO {
             try (PreparedStatement stmt = conn.prepareStatement(sqlCadastrar)) {
 
                 stmt.setInt(1, veterinario.getCrmv());
-                stmt.setInt(2, veterinario.getCpf());
+                stmt.setString(2, veterinario.getCpf());
 
                 stmt.executeUpdate();
 
@@ -71,7 +71,7 @@ public class VeterinarioDAO {
                 Veterinario veterinario = new Veterinario();
 
                 veterinario.setCrmv(rs.getInt("crmv"));
-                veterinario.setCpf(rs.getInt("cpf"));
+                veterinario.setCpf(rs.getString("cpf"));
                 veterinario.setNome(rs.getString("nome"));
                 veterinario.setDataDeNascimento(rs.getString("dataDeNascimento"));
                 veterinario.setTelefone(rs.getString("telefone"));
@@ -87,21 +87,28 @@ public class VeterinarioDAO {
     }
 
     // ATUALIZAR
-    public void atualizar(Veterinario veterinario, int crmvAntigo,
-            int cpfAntigo, String novoTelefone) {
+    public void atualizar(Veterinario veterinario, String cpfAntigo) {
 
-        String sqlVet = "UPDATE Veterinario SET crmv = ? "
-                + "WHERE crmv = ? AND Pessoa_cpf = ?";
+        String sqlVeterinario = "UPDATE Veterinario SET crmv = COALESCE(?, crmv) "
+                + "WHERE Pessoa_cpf = ?";
 
-        String sqlPessoa = "UPDATE Pessoa SET telefone = ? WHERE cpf = ?";
+        String sqlPessoa = "UPDATE Pessoa SET nome = COALESCE(?, nome), "
+                + "dataDeNascimento = COALESCE(?, dataDeNascimento), "
+                + "telefone = COALESCE(?, telefone) "
+                + "WHERE cpf = ?";
 
         try (Connection conn = ConnectionFactory.getConnection()) {
 
-            try (PreparedStatement stmt = conn.prepareStatement(sqlVet)) {
+            try (PreparedStatement stmt = conn.prepareStatement(sqlVeterinario)) {
 
-                stmt.setInt(1, veterinario.getCrmv());
-                stmt.setInt(2, crmvAntigo);
-                stmt.setInt(3, cpfAntigo);
+                if (veterinario.getCrmv() == 0) {
+                    stmt.setNull(1, java.sql.Types.INTEGER);
+                } else {
+                    stmt.setInt(1, veterinario.getCrmv());
+                }
+
+                
+                stmt.setString(2, cpfAntigo);
 
                 int linhas = stmt.executeUpdate();
 
@@ -113,8 +120,10 @@ public class VeterinarioDAO {
 
             try (PreparedStatement stmt = conn.prepareStatement(sqlPessoa)) {
 
-                stmt.setString(1, novoTelefone);
-                stmt.setInt(2, cpfAntigo);
+                stmt.setString(1, veterinario.getNome());
+                stmt.setString(2, veterinario.getDataDeNascimento());
+                stmt.setString(3, veterinario.getTelefone());
+                stmt.setString(4, cpfAntigo);
 
                 stmt.executeUpdate();
             }
@@ -127,15 +136,14 @@ public class VeterinarioDAO {
     }
 
     // EXCLUIR
-    public void excluir(int crmv, int cpf) {
+    public void excluir(String cpf) {
 
-        String sql = "DELETE FROM Veterinario WHERE crmv = ? AND Pessoa_cpf = ?";
+        String sql = "DELETE FROM Veterinario WHERE Pessoa_cpf = ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, crmv);
-            stmt.setInt(2, cpf);
+            stmt.setString(1, cpf);
 
             int linhas = stmt.executeUpdate();
 

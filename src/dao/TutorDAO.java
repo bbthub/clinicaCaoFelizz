@@ -14,60 +14,59 @@ import model.Tutor;
 public class TutorDAO {
 
     // CADASTRAR
-    
-public void cadastrar(Tutor tutor) {
 
-    String sqlVerificar = "SELECT cpf FROM Pessoa WHERE cpf = ?";
-    String sqlCadastrar = "INSERT INTO Tutor (endereço, tipoDeConsulta, Pessoa_cpf) VALUES (?, ?, ?)";
+    public void cadastrar(Tutor tutor) {
 
-    try (Connection conn = ConnectionFactory.getConnection()) {
+        String sqlVerificar = "SELECT cpf FROM Pessoa WHERE cpf = ?";
+        String sqlCadastrar = "INSERT INTO Tutor (endereço, tipoDeConsulta, Pessoa_cpf) VALUES (?, ?, ?)";
 
-        // Verificar se a pessoa existe
-        try (PreparedStatement verificar = conn.prepareStatement(sqlVerificar)) {
+        try (Connection conn = ConnectionFactory.getConnection()) {
 
-            verificar.setInt(1, tutor.getCpf());
+            // Verificar se a pessoa existe
+            try (PreparedStatement verificar = conn.prepareStatement(sqlVerificar)) {
 
-            try (ResultSet rs = verificar.executeQuery()) {
+                verificar.setString(1, tutor.getCpf());
 
-                if (!rs.next()) {
-                    System.out.println("Não foi possível cadastrar o tutor!");
-                    System.out.println("Esse CPF não está cadastrado como pessoa.");
-                    return;
+                try (ResultSet rs = verificar.executeQuery()) {
+
+                    if (!rs.next()) {
+                        System.out.println("Não foi possível cadastrar o tutor!");
+                        System.out.println("Esse CPF não está cadastrado como pessoa.");
+                        return;
+                    }
                 }
             }
+
+            // Cadastrar tutor
+            try (PreparedStatement stmt = conn.prepareStatement(sqlCadastrar)) {
+
+                stmt.setString(1, tutor.getEndereco());
+                stmt.setString(2, tutor.getTipoDeConsulta());
+                stmt.setString(3, tutor.getCpf());
+
+                stmt.executeUpdate();
+
+                System.out.println("Tutor cadastrado com sucesso!");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Erro ao cadastrar tutor: " + e.getMessage());
         }
-
-        // Cadastrar tutor
-        try (PreparedStatement stmt = conn.prepareStatement(sqlCadastrar)) {
-
-            stmt.setString(1, tutor.getEndereco());
-            stmt.setString(2, tutor.getTipoDeConsulta());
-            stmt.setInt(3, tutor.getCpf());
-
-            stmt.executeUpdate();
-
-            System.out.println("Tutor cadastrado com sucesso!");
-        }
-
-    } catch (SQLException e) {
-        System.out.println("Erro ao cadastrar tutor: " + e.getMessage());
     }
-}
-
 
     // LISTAR TODOS
     public List<Tutor> listarTodos() {
 
         String sql = "SELECT t.endereço, t.tipoDeConsulta, " +
-                     "p.cpf, p.dataDeNascimento, p.nome, p.telefone " +
-                     "FROM Tutor t " +
-                     "INNER JOIN Pessoa p ON t.Pessoa_cpf = p.cpf";
+                "p.cpf, p.dataDeNascimento, p.nome, p.telefone " +
+                "FROM Tutor t " +
+                "INNER JOIN Pessoa p ON t.Pessoa_cpf = p.cpf";
 
         List<Tutor> listaTutor = new ArrayList<>();
 
         try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
 
@@ -75,7 +74,7 @@ public void cadastrar(Tutor tutor) {
 
                 tutor.setEndereco(rs.getString("endereço"));
                 tutor.setTipoDeConsulta(rs.getString("tipoDeConsulta"));
-                tutor.setCpf(rs.getInt("cpf"));
+                tutor.setCpf(rs.getString("cpf"));
                 tutor.setDataDeNascimento(rs.getString("dataDeNascimento"));
                 tutor.setNome(rs.getString("nome"));
                 tutor.setTelefone(rs.getString("telefone"));
@@ -91,26 +90,48 @@ public void cadastrar(Tutor tutor) {
     }
 
     // ATUALIZAR
-    public void atualizar(Tutor tutor, String enderecoAntigo, int cpfAntigo) {
+    public void atualizar(Tutor tutor, String cpfAntigo) {
 
-        String sql = "UPDATE Tutor SET endereço = ?, tipoDeConsulta = ?, Pessoa_cpf = ? " +
-                     "WHERE endereço = ? AND Pessoa_cpf = ?";
+        String sqlTutor = "UPDATE Tutor SET endereço = COALESCE(?, endereço), " +
+                "tipoDeConsulta = COALESCE(?, tipoDeConsulta) " +
+                "WHERE Pessoa_cpf = ?";
 
-        try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sqlPessoa = "UPDATE Pessoa SET nome = COALESCE(?, nome), " +
+                "dataDeNascimento = COALESCE(?, dataDeNascimento), " +
+                "telefone = COALESCE(?, telefone) " +
+                "WHERE cpf = ?";
+        try (Connection conn = ConnectionFactory.getConnection()) {
 
-            stmt.setString(1, tutor.getEndereco());
-            stmt.setString(2, tutor.getTipoDeConsulta());
-            stmt.setInt(3, tutor.getCpf());
-            stmt.setString(4, enderecoAntigo);
-            stmt.setInt(5, cpfAntigo);
+            conn.setAutoCommit(false);
 
-            int linhas = stmt.executeUpdate();
+            try (PreparedStatement stmtTutor = conn.prepareStatement(sqlTutor);
+                    PreparedStatement stmtPessoa = conn.prepareStatement(sqlPessoa)) {
 
-            if (linhas > 0) {
-                System.out.println("Tutor atualizado com sucesso!");
-            } else {
-                System.out.println("Tutor não encontrado.");
+                // Atualizar dados do Tutor
+                stmtTutor.setString(1, tutor.getEndereco());
+                stmtTutor.setString(2, tutor.getTipoDeConsulta());
+                stmtTutor.setString(3, cpfAntigo);
+
+                // Atualizar dados da Pessoa
+                stmtPessoa.setString(1, tutor.getNome());
+                stmtPessoa.setString(2, tutor.getDataDeNascimento());
+                stmtPessoa.setString(3, tutor.getTelefone());
+                stmtPessoa.setString(4, cpfAntigo);
+
+                int linhasTutor = stmtTutor.executeUpdate();
+                int linhasPessoa = stmtPessoa.executeUpdate();
+
+                if (linhasTutor > 0 && linhasPessoa > 0) {
+                    conn.commit();
+                    System.out.println("Tutor atualizado com sucesso!");
+                } else {
+                    conn.rollback();
+                    System.out.println("Tutor não encontrado.");
+                }
+
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
 
         } catch (SQLException e) {
@@ -119,15 +140,14 @@ public void cadastrar(Tutor tutor) {
     }
 
     // EXCLUIR
-    public void excluir(String endereco, int cpf) {
+    public void excluir(String cpf) {
 
-        String sql = "DELETE FROM Tutor WHERE endereço = ? AND Pessoa_cpf = ?";
+        String sql = "DELETE FROM Tutor WHERE Pessoa_cpf = ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, endereco);
-            stmt.setInt(2, cpf);
+            stmt.setString(1, cpf);
 
             int linhas = stmt.executeUpdate();
 

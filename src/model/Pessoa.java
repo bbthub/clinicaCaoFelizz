@@ -1,12 +1,12 @@
 package model;
 
 public class Pessoa {
-private int cpf;
+private String cpf;
 private String dataDeNascimento;
 private String nome;
 private String telefone;
 
-public int getCpf() {
+public String getCpf() {
     return cpf;
 }
 public String getDataDeNascimento() {
@@ -18,7 +18,7 @@ public String getNome() {
 public String getTelefone() {
     return telefone;
 }
-public void setCpf(int cpf) {
+public void setCpf(String cpf) {
     this.cpf = cpf;
 }
 public void setDataDeNascimento(String dataDeNascimento) {

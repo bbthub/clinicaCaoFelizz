@@ -1,12 +1,12 @@
 package model;
 
 public class Pet {
-
+    private int idPet;
     private String nome;
     private String raca;
     private String dataDeNascimento;
     private double peso;
-    private int CpfTutor;
+    private String CpfTutor;
     private String enderecoTutor;
 
     public String getNome() {
@@ -41,11 +41,11 @@ public class Pet {
         this.raca = raca;
     }
 
-    public int getCpfTutor() {
+    public String getCpfTutor() {
         return CpfTutor;
     }
 
-    public void setCpfTutor(int cpfTutor) {
+    public void setCpfTutor(String cpfTutor) {
         CpfTutor = cpfTutor;
     }
 
@@ -55,6 +55,14 @@ public class Pet {
 
     public void setEnderecoTutor(String enderecoTutor) {
         this.enderecoTutor = enderecoTutor;
+    }
+
+    public int getIdPet() {
+        return idPet;
+    }
+
+    public void setIdPet(int idPet) {
+        this.idPet = idPet;
     }
 
 }

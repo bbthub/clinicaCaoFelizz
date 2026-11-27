@@ -16,38 +16,33 @@ public class PetDAO {
     // CADASTRAR
     public void cadastrar(Pet pet) {
 
-        String sqlVerificar = "SELECT 1 FROM Tutor WHERE endereço = ? AND Pessoa_cpf = ?";
+        String sqlVerificar = "SELECT 1 FROM Tutor WHERE Pessoa_cpf = ?";
 
-        String sqlCadastrar = "INSERT INTO Pet (nome, raça, dataDeNascimento, peso, cpfTutor, Tutor_endereço) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String sqlCadastrar = "INSERT INTO Pet (nome, raça, dataDeNascimento, peso, cpfTutor) "
+                + "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = ConnectionFactory.getConnection()) {
 
-            // Verificar se o tutor existe
             try (PreparedStatement verificar = conn.prepareStatement(sqlVerificar)) {
 
-                verificar.setString(1, pet.getEnderecoTutor());
-                verificar.setInt(2, pet.getCpfTutor());
+                verificar.setString(1, pet.getCpfTutor());
 
                 try (ResultSet rs = verificar.executeQuery()) {
 
                     if (!rs.next()) {
-                        System.out.println("Não foi possível cadastrar o pet!");
-                        System.out.println("O tutor informado não está cadastrado.");
+                        System.out.println("Tutor não está cadastrado.");
                         return;
                     }
                 }
             }
 
-            // Cadastrar pet
             try (PreparedStatement stmt = conn.prepareStatement(sqlCadastrar)) {
 
                 stmt.setString(1, pet.getNome());
                 stmt.setString(2, pet.getRaca());
                 stmt.setString(3, pet.getDataDeNascimento());
                 stmt.setDouble(4, pet.getPeso());
-                stmt.setInt(5, pet.getCpfTutor());
-                stmt.setString(6, pet.getEnderecoTutor());
+                stmt.setString(5, pet.getCpfTutor());
 
                 stmt.executeUpdate();
 
@@ -74,12 +69,13 @@ public class PetDAO {
 
                 Pet pet = new Pet();
 
+                pet.setIdPet(rs.getInt("idPet"));
+
                 pet.setNome(rs.getString("nome"));
                 pet.setRaca(rs.getString("raça"));
                 pet.setDataDeNascimento(rs.getString("dataDeNascimento"));
                 pet.setPeso(rs.getDouble("peso"));
-                pet.setCpfTutor(rs.getInt("cpfTutor"));
-                pet.setEnderecoTutor(rs.getString("Tutor_endereço"));
+                pet.setCpfTutor(rs.getString("cpfTutor"));
 
                 listaPet.add(pet);
             }
@@ -92,8 +88,9 @@ public class PetDAO {
     }
 
     // ATUALIZAR
-    public void atualizar(String nomeAntigo, String enderecoTutorAntigo,
-            String novoNome, String novaRaca, String novaData, Double novoPeso) {
+
+    public void atualizar(int idPet, String novoNome, String novaRaca,
+            String novaData, Double novoPeso) {
 
         StringBuilder sql = new StringBuilder("UPDATE Pet SET ");
         List<Object> valores = new ArrayList<>();
@@ -119,13 +116,12 @@ public class PetDAO {
         }
 
         if (valores.isEmpty()) {
-            System.out.println("Nenhum campo foi informado para atualização.");
+            System.out.println("Nenhum campo foi informado.");
             return;
         }
 
         sql.setLength(sql.length() - 2);
-
-        sql.append(" WHERE nome = ? AND Tutor_endereço = ?");
+        sql.append(" WHERE idPet = ?");
 
         try (Connection conn = ConnectionFactory.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
@@ -136,8 +132,7 @@ public class PetDAO {
                 stmt.setObject(indice++, valor);
             }
 
-            stmt.setString(indice++, nomeAntigo);
-            stmt.setString(indice, enderecoTutorAntigo);
+            stmt.setInt(indice, idPet);
 
             int linhas = stmt.executeUpdate();
 
@@ -153,15 +148,15 @@ public class PetDAO {
     }
 
     // EXCLUIR
-    public void excluir(String nome, String enderecoTutor) {
 
-        String sql = "DELETE FROM Pet WHERE nome = ? AND Tutor_endereço = ?";
+    public void excluir(int idPet) {
+
+        String sql = "DELETE FROM Pet WHERE idPet = ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, nome);
-            stmt.setString(2, enderecoTutor);
+            stmt.setInt(1, idPet);
 
             int linhas = stmt.executeUpdate();
 
@@ -177,22 +172,28 @@ public class PetDAO {
     }
 
     // Busca pets do tutor
-    public List<String> listarPetsDoTutor(String endereco, int cpf) {
 
-        String sql = "SELECT nome FROM Pet WHERE Tutor_endereço = ? AND cpfTutor = ?";
+    public List<Pet> listarPetsDoTutor(String cpf) {
 
-        List<String> pets = new ArrayList<>();
+        String sql = "SELECT * FROM Pet WHERE cpfTutor = ?";
+
+        List<Pet> pets = new ArrayList<>();
 
         try (Connection conn = ConnectionFactory.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, endereco);
-            stmt.setInt(2, cpf);
+            stmt.setString(1, cpf);
 
             try (ResultSet rs = stmt.executeQuery()) {
 
                 while (rs.next()) {
-                    pets.add(rs.getString("nome"));
+
+                    Pet pet = new Pet();
+
+                    pet.setIdPet(rs.getInt("idPet"));
+                    pet.setNome(rs.getString("nome"));
+
+                    pets.add(pet);
                 }
             }
 
@@ -202,4 +203,5 @@ public class PetDAO {
 
         return pets;
     }
+
 }

@@ -69,7 +69,7 @@ public class Main {
     public static void verificarPessoa(Pessoa pessoa) {
 
         System.out.print("CPF: ");
-        int cpf = Integer.parseInt(scanner.nextLine());
+        String cpf = (scanner.nextLine());
 
         List<Pessoa> pessoas = pessoaDAO.listarTodos();
 
@@ -86,7 +86,7 @@ public class Main {
 
         for (Pessoa p : pessoas) {
 
-            if (p.getCpf() == cpf) {
+            if (p.getCpf().equals(cpf)) {
                 encontrada = true;
                 break;
             }
@@ -167,45 +167,53 @@ public class Main {
                 case 3: {
                     Tutor tutor = new Tutor();
 
-                    System.out.print("Endereço antigo: ");
-                    String enderecoAntigo = scanner.nextLine();
+                    System.out.print("CPF do tutor que deseja atualizar: ");
+                    String cpfAntigo = scanner.nextLine();
 
-                    System.out.print("CPF antigo: ");
-                    int cpfAntigo = Integer.parseInt(scanner.nextLine());
+                    System.out.println("\nDeixe vazio os campos que não deseja alterar.");
+
+                    System.out.print("Novo nome: ");
+                    String nome = scanner.nextLine();
+                    tutor.setNome(nome.isBlank() ? null : nome);
+
+                    System.out.print("Nova data de nascimento: ");
+                    String data = scanner.nextLine();
+                    tutor.setDataDeNascimento(data.isBlank() ? null : data);
+
+                    System.out.print("Novo telefone: ");
+                    String telefone = scanner.nextLine();
+                    tutor.setTelefone(telefone.isBlank() ? null : telefone);
 
                     System.out.print("Novo endereço: ");
-                    tutor.setEndereco(scanner.nextLine());
+                    String endereco = scanner.nextLine();
+                    tutor.setEndereco(endereco.isBlank() ? null : endereco);
 
                     System.out.print("Novo tipo de consulta: ");
-                    tutor.setTipoDeConsulta(scanner.nextLine());
+                    String tipo = scanner.nextLine();
+                    tutor.setTipoDeConsulta(tipo.isBlank() ? null : tipo);
 
-                    // Verifica né
-                    verificarPessoa(tutor);
+                    tutorDAO.atualizar(tutor, cpfAntigo);
 
-                    tutorDAO.atualizar(tutor, enderecoAntigo, cpfAntigo);
                     break;
                 }
                 case 4: {
-                    System.out.print("Endereço: ");
-                    String endereco = scanner.nextLine();
 
-                    System.out.print("CPF: ");
-                    int cpf = Integer.parseInt(scanner.nextLine());
+                    System.out.print("CPF do tutor: ");
+                    String cpf = scanner.nextLine();
 
-                    // Buscar pets associados ao tutor
-                    List<String> pets = petDAO.listarPetsDoTutor(endereco, cpf);
+                    List<Pet> pets = petDAO.listarPetsDoTutor(cpf);
 
                     if (pets.isEmpty()) {
 
-                        // Não existem pets: excluir tutor diretamente
-                        tutorDAO.excluir(endereco, cpf);
+                        tutorDAO.excluir(cpf);
 
                     } else {
 
                         System.out.println("\nEste tutor possui os seguintes pets:");
 
-                        for (int i = 0; i < pets.size(); i++) {
-                            System.out.println((i + 1) + " - " + pets.get(i));
+                        for (Pet pet : pets) {
+                            System.out.println("ID: " + pet.getIdPet()
+                                    + " - " + pet.getNome());
                         }
 
                         System.out.println("\nÉ necessário excluir os pets antes de excluir o tutor.");
@@ -215,13 +223,11 @@ public class Main {
 
                         if (resposta.equalsIgnoreCase("S")) {
 
-                            // Excluir todos os pets associados
-                            for (String nomePet : pets) {
-                                petDAO.excluir(nomePet, endereco);
+                            for (Pet pet : pets) {
+                                petDAO.excluir(pet.getIdPet());
                             }
 
-                            // Tentar excluir o tutor depois
-                            tutorDAO.excluir(endereco, cpf);
+                            tutorDAO.excluir(cpf);
 
                         } else {
                             System.out.println("Exclusão do tutor cancelada.");
@@ -264,22 +270,63 @@ public class Main {
                     Pet pet = new Pet();
 
                     System.out.print("Nome: ");
-                    pet.setNome(scanner.nextLine());
+                    String nome = scanner.nextLine();
+
+                    if (nome.isBlank()) {
+                        System.out.println("Erro: o nome é obrigatório!");
+                        break;
+                    }
+                    pet.setNome(nome);
 
                     System.out.print("Raça: ");
-                    pet.setRaca(scanner.nextLine());
+                    String raca = scanner.nextLine();
+
+                    if (raca.isBlank()) {
+                        System.out.println("Erro: a raça é obrigatória!");
+                        break;
+                    }
+                    pet.setRaca(raca);
 
                     System.out.print("Data de nascimento (AAAA-MM-DD): ");
-                    pet.setDataDeNascimento(scanner.nextLine());
+                    String data = scanner.nextLine();
+
+                    if (data.isBlank()) {
+                        System.out.println("Erro: a data de nascimento é obrigatória!");
+                        break;
+                    }
+                    pet.setDataDeNascimento(data);
 
                     System.out.print("Peso: ");
-                    pet.setPeso(Double.parseDouble(scanner.nextLine()));
+                    String pesoTexto = scanner.nextLine();
+
+                    try {
+                        if (pesoTexto.isBlank()) {
+                            System.out.println("Erro: o peso é obrigatório!");
+                            break;
+                        }
+
+                        double peso = Double.parseDouble(pesoTexto);
+
+                        if (peso <= 0) {
+                            System.out.println("Erro: o peso deve ser maior que zero!");
+                            break;
+                        }
+
+                        pet.setPeso(peso);
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("Erro: digite um peso numérico válido!");
+                        break;
+                    }
 
                     System.out.print("CPF do tutor: ");
-                    pet.setCpfTutor(Integer.parseInt(scanner.nextLine()));
+                    String cpf = scanner.nextLine();
 
-                    System.out.print("Endereço do tutor: ");
-                    pet.setEnderecoTutor(scanner.nextLine());
+                    if (cpf.isBlank()) {
+                        System.out.println("Erro: o CPF do tutor é obrigatório!");
+                        break;
+                    }
+                    pet.setCpfTutor(cpf);
 
                     petDAO.cadastrar(pet);
                     break;
@@ -294,46 +341,99 @@ public class Main {
                         System.out.println("Nascimento: " + p.getDataDeNascimento());
                         System.out.println("Peso: " + p.getPeso());
                         System.out.println("CPF do tutor: " + p.getCpfTutor());
-                        System.out.println("Endereço do tutor: " + p.getEnderecoTutor());
+
                     }
                     break;
                 }
 
                 case 3: {
-                    System.out.print("Nome antigo: ");
-                    String nomeAntigo = scanner.nextLine();
 
-                    System.out.print("Endereço antigo do tutor: ");
-                    String enderecoAntigo = scanner.nextLine();
+                    List<Pet> pets = petDAO.listarTodos();
+
+                    if (pets.isEmpty()) {
+                        System.out.println("Não existem pets cadastrados.");
+                        break;
+                    }
+
+                    System.out.println("\n========== PETS CADASTRADOS ==========");
+
+                    for (Pet pet : pets) {
+                        System.out.println("ID: " + pet.getIdPet()
+                                + " | Nome: " + pet.getNome());
+                    }
+
+                    // Escolher pet
+                    System.out.print("\nDigite o ID do Pet que deseja atualizar: ");
+                    String idTexto = scanner.nextLine();
+
+                    int idPet;
+
+                    try {
+                        idPet = Integer.parseInt(idTexto);
+
+                        if (idPet <= 0) {
+                            System.out.println("Erro: digite um ID válido!");
+                            break;
+                        }
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("Erro: o ID deve ser um número inteiro!");
+                        break;
+                    }
+
+                    boolean existe = false;
+
+                    for (Pet pet : pets) {
+                        if (pet.getIdPet() == idPet) {
+                            existe = true;
+                            break;
+                        }
+                    }
+
+                    if (!existe) {
+                        System.out.println("Pet não encontrado!");
+                        break;
+                    }
 
                     System.out.println("\nDeixe em branco os campos que não deseja alterar.");
 
                     System.out.print("Novo nome: ");
                     String novoNome = scanner.nextLine();
+                    if (novoNome.isBlank())
+                        novoNome = null;
 
                     System.out.print("Nova raça: ");
                     String novaRaca = scanner.nextLine();
+                    if (novaRaca.isBlank())
+                        novaRaca = null;
 
                     System.out.print("Nova data de nascimento: ");
                     String novaData = scanner.nextLine();
+                    if (novaData.isBlank())
+                        novaData = null;
 
                     System.out.print("Novo peso: ");
                     String pesoTexto = scanner.nextLine();
 
-                    if (novoNome.isBlank())
-                        novoNome = null;
-                    if (novaRaca.isBlank())
-                        novaRaca = null;
-                    if (novaData.isBlank())
-                        novaData = null;
+                    Double novoPeso = null;
 
-                    Double novoPeso = pesoTexto.isBlank()
-                            ? null
-                            : Double.parseDouble(pesoTexto);
+                    if (!pesoTexto.isBlank()) {
+                        try {
+                            novoPeso = Double.parseDouble(pesoTexto);
+
+                            if (novoPeso <= 0) {
+                                System.out.println("Erro: o peso deve ser maior que zero!");
+                                break;
+                            }
+
+                        } catch (NumberFormatException e) {
+                            System.out.println("Erro: digite um peso numérico válido!");
+                            break;
+                        }
+                    }
 
                     petDAO.atualizar(
-                            nomeAntigo,
-                            enderecoAntigo,
+                            idPet,
                             novoNome,
                             novaRaca,
                             novaData,
@@ -342,13 +442,61 @@ public class Main {
                     break;
                 }
                 case 4: {
-                    System.out.print("Nome do pet: ");
-                    String nome = scanner.nextLine();
+                    List<Pet> pets = petDAO.listarTodos();
 
-                    System.out.print("Endereço do tutor: ");
-                    String endereco = scanner.nextLine();
+                    if (pets.isEmpty()) {
+                        System.out.println("Não existem pets cadastrados.");
+                        break;
+                    }
 
-                    petDAO.excluir(nome, endereco);
+                    System.out.println("\n========== PETS CADASTRADOS ==========");
+
+                    for (Pet pet : pets) {
+                        System.out.println("ID: " + pet.getIdPet()
+                                + " | Nome: " + pet.getNome());
+                    }
+
+                    System.out.print("\nDigite o ID do pet que deseja excluir: ");
+                    String idTexto = scanner.nextLine();
+
+                    int idPet;
+
+                    try {
+                        idPet = Integer.parseInt(idTexto);
+
+                        if (idPet <= 0) {
+                            System.out.println("Erro: digite um ID válido!");
+                            break;
+                        }
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("Erro: o ID deve ser um número inteiro!");
+                        break;
+                    }
+
+                    boolean existe = false;
+
+                    for (Pet pet : pets) {
+                        if (pet.getIdPet() == idPet) {
+                            existe = true;
+                            break;
+                        }
+                    }
+
+                    if (!existe) {
+                        System.out.println("Pet não encontrado!");
+                        break;
+                    }
+
+                    System.out.print("Tem certeza que deseja excluir este pet? (S/N): ");
+                    String resposta = scanner.nextLine();
+
+                    if (resposta.equalsIgnoreCase("S")) {
+                        petDAO.excluir(idPet);
+                    } else {
+                        System.out.println("Exclusão cancelada.");
+                    }
+
                     break;
                 }
 
@@ -409,31 +557,40 @@ public class Main {
                 case 3: {
                     Veterinario veterinario = new Veterinario();
 
-                    System.out.print("CRMV antigo: ");
-                    int crmvAntigo = Integer.parseInt(scanner.nextLine());
-
                     System.out.print("CPF do veterinário: ");
-                    int cpfAntigo = Integer.parseInt(scanner.nextLine());
+                    String cpfAntigo = scanner.nextLine();
+
+                    System.out.println("\nDeixe vazio os campos que não deseja alterar.");
 
                     System.out.print("Novo CRMV: ");
-                    veterinario.setCrmv(Integer.parseInt(scanner.nextLine()));
+                    String crmvTexto = scanner.nextLine();
+
+                    if (!crmvTexto.isBlank()) {
+                        veterinario.setCrmv(Integer.parseInt(crmvTexto));
+                    }
+
+                    System.out.print("Novo nome: ");
+                    String nome = scanner.nextLine();
+                    veterinario.setNome(nome.isBlank() ? null : nome);
+
+                    System.out.print("Nova data de nascimento: ");
+                    String data = scanner.nextLine();
+                    veterinario.setDataDeNascimento(data.isBlank() ? null : data);
 
                     System.out.print("Novo telefone: ");
-                    String novoTelefone = scanner.nextLine();
+                    String telefone = scanner.nextLine();
+                    veterinario.setTelefone(telefone.isBlank() ? null : telefone);
 
-                    veterinarioDAO.atualizar(
-                            veterinario, crmvAntigo, cpfAntigo, novoTelefone);
+                    veterinarioDAO.atualizar(veterinario, cpfAntigo);
 
                     break;
                 }
                 case 4: {
-                    System.out.print("CRMV: ");
-                    int crmv = Integer.parseInt(scanner.nextLine());
 
                     System.out.print("CPF: ");
-                    int cpf = Integer.parseInt(scanner.nextLine());
+                    String cpf = (scanner.nextLine());
 
-                    veterinarioDAO.excluir(crmv, cpf);
+                    veterinarioDAO.excluir(cpf);
                     break;
                 }
 

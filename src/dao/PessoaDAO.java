@@ -21,7 +21,7 @@ public class PessoaDAO {
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, pessoa.getCpf());
+            stmt.setString(1, pessoa.getCpf());
             stmt.setString(2, pessoa.getDataDeNascimento());
             stmt.setString(3, pessoa.getNome());
             stmt.setString(4, pessoa.getTelefone());
@@ -52,7 +52,7 @@ public class PessoaDAO {
 
                 Pessoa pessoa = new Pessoa();
 
-                pessoa.setCpf(rs.getInt("cpf"));
+                pessoa.setCpf(rs.getString("cpf"));
                 pessoa.setDataDeNascimento(rs.getString("dataDeNascimento"));
                 pessoa.setNome(rs.getString("nome"));
                 pessoa.setTelefone(rs.getString("telefone"));
@@ -68,18 +68,18 @@ public class PessoaDAO {
     }
 
     // Atualizar pessoa
-    public void atualizar(Pessoa pessoa, int cpfAntigo) {
+    public void atualizar(Pessoa pessoa, String cpfAntigo) {
 
         String sql = "UPDATE pessoa SET cpf = ?, dataDeNascimento = ?, nome = ?, telefone = ? WHERE cpf = ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, pessoa.getCpf());
+            stmt.setString(1, pessoa.getCpf());
             stmt.setString(2, pessoa.getDataDeNascimento());
             stmt.setString(3, pessoa.getNome());
             stmt.setString(4, pessoa.getTelefone());
-            stmt.setInt(5, cpfAntigo);
+            stmt.setString(5, cpfAntigo);
 
             int linhasAfetadas = stmt.executeUpdate();
 
@@ -95,14 +95,14 @@ public class PessoaDAO {
     }
 
     // Excluir pessoa
-    public void excluir(int cpf) {
+    public void excluir(String cpf) {
 
         String sql = "DELETE FROM pessoa WHERE cpf = ?";
 
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, cpf);
+            stmt.setString(1, cpf);
 
             int linhasAfetadas = stmt.executeUpdate();
 
